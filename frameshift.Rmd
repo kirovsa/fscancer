@@ -1,0 +1,182 @@
+---
+title: "FrameshiftsInCancer"
+author: "Stefan Kirov"
+date: "2022-07-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## R Load/prep data
+
+
+```{r prepdata, echo=FALSE}
+
+fs<-read.table("/media/kirovs/writable/CBIO/datahub/cbio.fs.nocelllinepdx.txt",sep="\t",head=F,quote="")
+colnames(fs)<-c("Project","Gene","Patient","VarType","HGVSp","FSPosition","FSLen")
+fs<-fs[fs$VarType!="SNP",]
+fs<-fs[fs$VarType!="DNP",]
+fs<-fs[fs$HGVSp!="",]
+tsf<-fs[fs$FSLen>0,]
+fs<-tsf
+
+fsh<-tsf[tsf$FSLen>100,]
+fsh$id<-rownames(fsh)
+genl<-table(fsh$Gene)
+enslen<-read.table("/media/kirovs/writable/CBIO/datahub/protlen.txt",sep="|",head=F)
+colnames(enslen)<-c("ENST","ENSG","Symbol","ENSP","ProtLen","Type")
+enslen<-enslen[enslen$Type=="protein_coding",]
+enslen$ProtLen<-enslen$ProtLen/3
+
+#select longest form
+longestform<-function(gene) {
+  gened<-enslen[enslen$Symbol==gene,]
+  maxlen<-max(gened$ProtLen)
+  return(head(gened[gened$ProtLen==maxlen,],1))
+}
+
+plotFS<-function(genename){
+  genedat<-fs.full[fs.full$Gene==genename,]
+  #Plot start vs length
+  plot(genedat[,"FSPosition"],genedat[,"FSLen"],main=paste("Start vs length for",genename))
+  hist(genedat[,"FSPosition"],xlim=c(1,max(genedat[,"ProtLen"])),main=paste("Position of frameshift in ",genename),breaks=50)
+  plot(genedat[,"FSPosition"],genedat[,"FSEnd"],main=paste("Start vs length for",genename))
+}
+
+longpeplen<-sapply(unique(enslen$Symbol),longestform)
+longpeplen.df<-as.data.frame(t(longpeplen))
+
+```
+
+## General stats
+
+
+```{r genstats, echo=FALSE}
+
+#General Stats
+#Per patient
+hist(log10(fs$FSLen),breaks=50,main="Histogram of frameshift lengths across all genes/patients",xlab="Log10 of frameshift length")
+#Per patient large fs seq
+ppfsh<-aggregate(FSLen ~ Patient,data=fsh,length)
+hist(log10(ppfsh$FSLen),prob=T,main="Histogram of the count of large frameshifts per patient",xlab="Log10 of frameshift length",breaks=100)
+#All frameshifts
+ppfsh<-aggregate(FSLen ~ Patient,data=tsf,length)
+hist(log10(ppfsh$FSLen),prob=T,main="Histogram of the count of all frameshifts per patient",xlab="Log10 of frameshift length",breaks=100)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+## Advanced analysis
+
+
+```{r detailed, echo=FALSE}
+
+fs.full<-merge(fs,longpeplen.df,by.x="Gene",by.y="Symbol")
+
+fs.full$ProtLen<-as.numeric(as.character(fs.full$ProtLen))
+fs.full<-fs.full[fs.full$ProtLen>=fs.full$FSPosition,]
+fs.full$DeletedFragLen<-fs.full$ProtLen - fs.full$FSPosition
+#Correlation between lost and gained fragments? 
+plot(fs.full$DeletedFragLen,fs.full$FSLen, main="Length of the deleted protein fragment vs newly formed fragment",
+     xlab="Length of lost protein sequence",ylab="Length of gained protein seequence")
+fs.full$DeletedFrac<-fs.full$DeletedFragLen/fs.full$ProtLen
+fs.full$ReplacedFrac<-fs.full$FSLen/fs.full$DeletedFragLen
+fs.full$FSEnd<-fs.full$FSPosition+fs.full$FSLen
+
+#Check what p53 looks like
+tp53<-fs.full[fs.full$Gene=="TP53",]
+ARID1A<-fs.full[fs.full$Gene=="ARID1A",]
+BRD4<-fs.full[fs.full$Gene=="BRD4",]
+RUNX1<-fs.full[fs.full$Gene=="RUNX1",]
+RARA<-fs.full[fs.full$Gene=="RARA",]
+
+countfs<-aggregate(. ~ Gene,data=fs,length)
+meanfs<-aggregate(FSLen ~ Gene,data=fs,mean)
+counthighfs<-aggregate(. ~ Gene,data=fsh,length)
+countlowfs<-aggregate(. ~ Gene,data=fs[fs$FSLen<50,],length)
+
+#High vs low
+cntsstat<-merge(countlowfs[,c("Gene","Patient")],counthighfs[,c("Gene","Patient")],by="Gene",all=T)
+cntsstat$Patient.y[is.na(cntsstat$Patient.y)]<-0
+cntsstat$Ratio<-cntsstat$Patient.y/cntsstat$Patient.x
+
+#High vs all
+cntsstatall<-merge(countfs[,c("Gene","Patient")],counthighfs[,c("Gene","Patient")],by="Gene",all=T)
+cntsstatall$Patient.y[is.na(cntsstatall$Patient.y)]<-0
+cntsstatall$Ratio<-cntsstatall$Patient.y/cntsstatall$Patient.x
+
+tumorsuppressors<-cntsstat[cntsstat$Ratio<0.01 & cntsstat$Patient.x>100,]
+changeofF<-cntsstat[cntsstat$Ratio>0.1 & cntsstat$Patient.x>50,]
+plot(changeofF$Patient.x,changeofF$Patient.y,log="xy",main="Large vs small frameshift events in the same genes",
+     xlab="Small frameshifts",ylab="Large frameshifts")
+cor(changeofF$Patient.x,changeofF$Patient.y)
+plot(tumorsuppressors$Patient.x,tumorsuppressors$Patient.y)
+cor(tumorsuppressors$Patient.x,tumorsuppressors$Patient.y)
+
+```
+
+
+## Gene stats
+
+
+```{r genestats, echo=FALSE}
+
+
+fsmeanlen<-aggregate(FSLen ~ Gene,data=fs.full,mean)
+fsmeancnt<-aggregate(FSLen ~ Gene,data=fs.full,length)
+fs.full$ReplacedFrag<-fs.full$FSLen-fs.full$DeletedFragLen
+fsgenesumlen<-aggregate(ReplacedFrag ~ Gene,data=fs.full,sum)
+fsgenesumlen<-merge(fsgenesumlen,longpeplen.df,by.x="Gene",by.y="Symbol")
+fsgenesumlen$ProtLen<-as.numeric(as.character(fsgenesumlen$ProtLen))
+fsgenesumlen$ReplacedFragNorm<-fsgenesumlen$ReplacedFrag/fsgenesumlen$ProtLen
+fsgenesumlen$ReplacedFragNorm[fsgenesumlen$ReplacedFragNorm<0]<-abs(0.1/fsgenesumlen$ReplacedFragNorm[fsgenesumlen$ReplacedFragNorm<0])
+hist(log10(fsgenesumlen$ReplacedFragNorm),breaks=100)
+highcofpotential<-fsgenesumlen$Gene[fsgenesumlen$ReplacedFragNorm>0.5]
+
+```
+
+
+
+## Examples of TS and others
+
+
+```{r geneex, echo=FALSE}
+
+#Check what p53 looks like
+examples<-c("TP53","KRAS","RARA","BRD4","IDH1","ARID1A","RUNX1","PLEKHA6","STK11","SOX9","TMSB15A","TMEM97")
+lapply(examples,plotFS)
+
+
+
+
+tp53<-fs.full[fs.full$Gene=="TP53",]
+ARID1A<-fs.full[fs.full$Gene=="ARID1A",]
+BRD4<-fs.full[fs.full$Gene=="BRD4",]
+RUNX1<-fs.full[fs.full$Gene=="RUNX1",]
+RARA<-fs.full[fs.full$Gene=="RARA",]
+KRAS<-fs.full[fs.full$Gene=="KRAS",]
+ts<-hist(tp53$FSLen,breaks=100)
+ts2<-hist(KRAS$FSLen,breaks=100)
+
+plot( ts, col=rgb(0,0,1,1/4) )  # first histogram
+plot( ts2, col=rgb(1,0,0,1/4), add=T)  # second
+
+
+```
+
+## Gene sites stats
+
+
+```{r genesites, echo=FALSE}
+
+
+sitestats<-aggregate(FSPosition ~ Gene + FSEnd, data=fs.full, length)
+colnames(sitestats)[3]<-"count"
+sitestats.full<-merge(sitestats,longpeplen.df,by.x="Gene",by.y="Symbol")
+
+```
