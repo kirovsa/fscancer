@@ -59,12 +59,14 @@ longpeplen.df<-as.data.frame(t(longpeplen))
 #General Stats
 #Per patient
 hist(log10(fs$FSLen),breaks=50,main="Histogram of frameshift lengths across all genes/patients",xlab="Log10 of frameshift length")
+
 #Per patient large fs seq
 ppfsh<-aggregate(FSLen ~ Patient,data=fsh,length)
 hist(log10(ppfsh$FSLen),prob=T,main="Histogram of the count of large frameshifts per patient",xlab="Log10 of frameshift length",breaks=100)
 #All frameshifts
 ppfsh<-aggregate(FSLen ~ Patient,data=tsf,length)
 hist(log10(ppfsh$FSLen),prob=T,main="Histogram of the count of all frameshifts per patient",xlab="Log10 of frameshift length",breaks=100)
+
 
 ```
 
@@ -88,6 +90,8 @@ fs.full$DeletedFrac<-fs.full$DeletedFragLen/fs.full$ProtLen
 fs.full$ReplacedFrac<-fs.full$FSLen/fs.full$DeletedFragLen
 fs.full$FSEnd<-fs.full$FSPosition+fs.full$FSLen
 
+hist(fs.full$DeletedFrac,breaks=50,main="Histogram of frameshift position across all genes/patients", xlab="Relative position in a proten")
+
 #Check what p53 looks like
 tp53<-fs.full[fs.full$Gene=="TP53",]
 ARID1A<-fs.full[fs.full$Gene=="ARID1A",]
@@ -102,22 +106,27 @@ countlowfs<-aggregate(. ~ Gene,data=fs[fs$FSLen<50,],length)
 
 #High vs low
 cntsstat<-merge(countlowfs[,c("Gene","Patient")],counthighfs[,c("Gene","Patient")],by="Gene",all=T)
+cntsstat$Patient.y<-as.numeric(as.character(cntsstat$Patient.y))
+cntsstat$Patient.x<-as.numeric(as.character(cntsstat$Patient.x))
 cntsstat$Patient.y[is.na(cntsstat$Patient.y)]<-0
 cntsstat$Ratio<-cntsstat$Patient.y/cntsstat$Patient.x
+colnames(cntsstat)<-c("Gene","AllFS","LongFS","Ratio")
 
 #High vs all
 cntsstatall<-merge(countfs[,c("Gene","Patient")],counthighfs[,c("Gene","Patient")],by="Gene",all=T)
 cntsstatall$Patient.y[is.na(cntsstatall$Patient.y)]<-0
 cntsstatall$Ratio<-cntsstatall$Patient.y/cntsstatall$Patient.x
+colnames(cntsstatall)<-c("Gene","AllFS","LongFS","Ratio")
 
-tumorsuppressors<-cntsstat[cntsstat$Ratio<0.01 & cntsstat$Patient.x>100,]
-changeofF<-cntsstat[cntsstat$Ratio>0.1 & cntsstat$Patient.x>50,]
-plot(changeofF$Patient.x,changeofF$Patient.y,log="xy",main="Large vs small frameshift events in the same genes",
+tumorsuppressors<-cntsstat[ which(cntsstat$AllFS>100 & cntsstat$Ratio<0.01) ,]
+changeofF<-cntsstat[which(cntsstat$Ratio>0.1 & cntsstat$AllFS>50),]
+plot(changeofF$AllFS,changeofF$LongFS,log="xy",main="Large vs small frameshift events in the same genes",
      xlab="Small frameshifts",ylab="Large frameshifts")
-cor(changeofF$Patient.x,changeofF$Patient.y)
-plot(tumorsuppressors$Patient.x,tumorsuppressors$Patient.y)
-cor(tumorsuppressors$Patient.x,tumorsuppressors$Patient.y)
-
+cor(changeofF$AllFS,changeofF$LongFS)
+plot(tumorsuppressors$AllFS,tumorsuppressors$LongFS)
+cor(tumorsuppressors$AllFS,tumorsuppressors$LongFS)
+write.table(tumorsuppressors,file="tumorsuppressors.predict.txt",sep="\t",quote=F,row.names = F)
+write.table(changeofF,file="changeoff.predict.txt",sep="\t",quote=F,row.names = F)
 ```
 
 
@@ -148,7 +157,7 @@ highcofpotential<-fsgenesumlen$Gene[fsgenesumlen$ReplacedFragNorm>0.5]
 ```{r geneex, echo=FALSE}
 
 #Check what p53 looks like
-examples<-c("TP53","KRAS","RARA","BRD4","IDH1","ARID1A","RUNX1","PLEKHA6","STK11","SOX9","TMSB15A","TMEM97")
+examples<-c("TP53","KRAS","RARA","BRD4","IDH1","ARID1A","ARID1B","RUNX1","PLEKHA6","STK11","SOX9","TMSB15A","TMEM97","APC","VHL","NF1","RB1","NPM1")
 lapply(examples,plotFS)
 
 
