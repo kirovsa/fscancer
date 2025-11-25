@@ -1,6 +1,6 @@
 # fscancer
 This code was made available to reproduce the frameshift analysis in the publication:
-"Framshifts may carry oncogenic potential beyond loss of function"
+"Frameshifts may carry oncogenic potential beyond loss of function"
 There are 2 components:
 Produce intermediate files from the perl script
 combineCBIO.fs.pl
