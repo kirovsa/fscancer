@@ -1,4 +1,4 @@
-my $cbfs=`find . -name 'data_mutations*' |grep -v ccle|grep -vi pdx|grep -vi test`;
+my $cbfs=`find . -name 'data_mutations*' |grep -vi ccle|grep -vi pdx|grep -vi cellline|grep -vi cell_line|grep -vi xenograft|grep -vi test`;
 #my $cbfs=`find . -name 'data_mutations*' |grep test`;
 open(CNT,">cnt");
 my @cbf=split(/\n/,$cbfs);
