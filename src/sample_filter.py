@@ -5,7 +5,6 @@ This module provides functionality to filter out model-derived samples
 (PDX, cell lines, etc.) from mutation files using metadata files.
 """
 
-import csv
 import os
 import re
 from pathlib import Path
@@ -82,7 +81,7 @@ def is_model_sample(sample_type_value: str) -> bool:
     value_lower = str(sample_type_value).lower().strip()
     
     for pattern in MODEL_TYPE_PATTERNS:
-        if re.search(pattern, value_lower, re.IGNORECASE):
+        if re.search(pattern, value_lower):
             return True
     
     return False
