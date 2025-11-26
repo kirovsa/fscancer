@@ -9,6 +9,7 @@
 *.cnt
 cnt
 cbio.fs.nocelllinepdx.txt
+filter_stats.tsv
 
 # Backup files
 *.bak
