@@ -1,0 +1,9 @@
+sample_id	sample_type
+SAMPLE001	Patient
+SAMPLE002	PDX
+SAMPLE003	Patient
+SAMPLE004	Cell Line
+SAMPLE005	Primary Tumor
+SAMPLE006	xenograft
+SAMPLE007	Metastatic
+SAMPLE008	patient-derived xenograft

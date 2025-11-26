@@ -1,0 +1,15 @@
+# IDE settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Output files
+*.cnt
+cnt
+cbio.fs.nocelllinepdx.txt
+filter_stats.tsv
+
+# Backup files
+*.bak

@@ -1,0 +1,6 @@
+#version 2.0
+Hugo_Symbol	Variant_Type	Tumor_Sample_Barcode	HGVSp	Consequence
+TP53	SNP	SAMPLE001	p.R175H	missense_variant
+KRAS	SNP	SAMPLE003	p.G12D	missense_variant
+BRAF	SNP	SAMPLE005	p.V600E	missense_variant
+PIK3CA	INS	SAMPLE007	p.A1046fs*42	frameshift_variant
