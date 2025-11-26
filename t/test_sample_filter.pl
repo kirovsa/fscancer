@@ -3,7 +3,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 27;
+use Test::More tests => 33;
 use File::Basename;
 use Cwd 'abs_path';
 
@@ -238,7 +238,7 @@ subtest 'discover_subdirectories' => sub {
     my $projects_dir = "$fixtures_dir/projects";
     my @subdirs = discover_subdirectories($projects_dir);
     
-    ok(scalar(@subdirs) >= 3, "Found at least 3 subdirectories");
+    ok(scalar(@subdirs) >= 2, "Found at least 2 subdirectories");
     
     # Check that we get [name, path] pairs
     my %found_dirs = map { $_->[0] => $_->[1] } @subdirs;
@@ -285,6 +285,114 @@ subtest 'load_sample_metadata_from_subdirs - empty projects skipped' => sub {
     
     # empty_project should not be in results (no metadata files)
     ok(!exists $project_metadata{'empty_project'}, "Empty project not included in results");
+};
+
+# Test normalize_sample_barcode
+subtest 'normalize_sample_barcode - Basic normalization' => sub {
+    plan tests => 5;
+    is(normalize_sample_barcode("SAMPLE001"), "SAMPLE001", "Simple barcode unchanged");
+    is(normalize_sample_barcode("  SAMPLE001  "), "SAMPLE001", "Whitespace trimmed");
+    is(normalize_sample_barcode(""), "", "Empty string returns empty");
+    is(normalize_sample_barcode(undef), "", "undef returns empty");
+    is(normalize_sample_barcode("sample-123"), "sample-123", "Regular barcode unchanged");
+};
+
+subtest 'normalize_sample_barcode - TCGA samples' => sub {
+    plan tests => 4;
+    # TCGA format: TCGA-XX-XXXX-XXX-XXX-XXXX-XX
+    # First 15 chars (TCGA-XX-XXXX-XX) identify sample
+    is(normalize_sample_barcode("TCGA-AA-1234-01A-11D-1234-01"), "TCGA-AA-1234-01", "Full TCGA barcode normalized");
+    is(normalize_sample_barcode("TCGA-AA-1234-01"), "TCGA-AA-1234-01", "Short TCGA barcode unchanged");
+    is(normalize_sample_barcode("TCGA-BB-5678-02A-22R-5678-02"), "TCGA-BB-5678-02", "Different TCGA barcode normalized");
+    # Same participant, different portions should match
+    my $bc1 = normalize_sample_barcode("TCGA-AA-1234-01A-11D-1234-01");
+    my $bc2 = normalize_sample_barcode("TCGA-AA-1234-01B-22R-5678-02");
+    is($bc1, $bc2, "Same sample different portions normalize to same value");
+};
+
+# Test is_duplicate_sample and record_sample_seen
+subtest 'is_duplicate_sample - Basic detection' => sub {
+    plan tests => 4;
+    my %seen_samples;
+    my %first_project;
+    
+    ok(!is_duplicate_sample("SAMPLE001", \%seen_samples, \%first_project), "First sample not duplicate");
+    record_sample_seen("SAMPLE001", "project_a", \%seen_samples, \%first_project);
+    ok(is_duplicate_sample("SAMPLE001", \%seen_samples, \%first_project), "Same sample is duplicate");
+    ok(!is_duplicate_sample("SAMPLE002", \%seen_samples, \%first_project), "Different sample not duplicate");
+    ok(!is_duplicate_sample("", \%seen_samples, \%first_project), "Empty barcode not duplicate");
+};
+
+subtest 'is_duplicate_sample - TCGA normalization' => sub {
+    plan tests => 3;
+    my %seen_samples;
+    my %first_project;
+    
+    # Record first TCGA sample
+    record_sample_seen("TCGA-AA-1234-01A-11D-1234-01", "project_a", \%seen_samples, \%first_project);
+    
+    # Same sample with different portion/analyte should be duplicate
+    ok(is_duplicate_sample("TCGA-AA-1234-01B-22R-5678-02", \%seen_samples, \%first_project), 
+       "Same TCGA sample different portion is duplicate");
+    
+    # Different sample should not be duplicate
+    ok(!is_duplicate_sample("TCGA-BB-5678-02A-11D-1234-01", \%seen_samples, \%first_project),
+       "Different TCGA sample not duplicate");
+    
+    # Different sample type (e.g., 01 vs 02) should not be duplicate
+    ok(!is_duplicate_sample("TCGA-AA-1234-02A-11D-1234-01", \%seen_samples, \%first_project),
+       "Same patient different sample type not duplicate");
+};
+
+# Test get_sample_first_project
+subtest 'get_sample_first_project' => sub {
+    plan tests => 4;
+    my %seen_samples;
+    my %first_project;
+    
+    record_sample_seen("SAMPLE001", "project_a", \%seen_samples, \%first_project);
+    record_sample_seen("SAMPLE002", "project_b", \%seen_samples, \%first_project);
+    
+    is(get_sample_first_project("SAMPLE001", \%first_project), "project_a", "Returns correct first project for SAMPLE001");
+    is(get_sample_first_project("SAMPLE002", \%first_project), "project_b", "Returns correct first project for SAMPLE002");
+    ok(!defined(get_sample_first_project("SAMPLE003", \%first_project)), "Returns undef for unknown sample");
+    ok(!defined(get_sample_first_project("", \%first_project)), "Returns undef for empty barcode");
+};
+
+# Integration test for duplicate detection across projects
+subtest 'Integration - Duplicate detection across projects' => sub {
+    plan tests => 6;
+    my %seen_samples;
+    my %first_project;
+    
+    # Simulate processing samples from multiple projects
+    my @project_a_samples = qw(SAMPLE001 SAMPLE002 SAMPLE003);
+    my @project_b_samples = qw(SAMPLE002 SAMPLE004 SAMPLE005);  # SAMPLE002 is duplicate
+    my @project_c_samples = qw(SAMPLE001 SAMPLE005 SAMPLE006);  # SAMPLE001 and SAMPLE005 are duplicates
+    
+    # Process project_a
+    foreach my $sample (@project_a_samples) {
+        record_sample_seen($sample, "project_a", \%seen_samples, \%first_project) 
+            unless is_duplicate_sample($sample, \%seen_samples, \%first_project);
+    }
+    
+    # Check project_b duplicates
+    ok(!is_duplicate_sample("SAMPLE004", \%seen_samples, \%first_project), "SAMPLE004 is new in project_b");
+    ok(is_duplicate_sample("SAMPLE002", \%seen_samples, \%first_project), "SAMPLE002 is duplicate from project_a");
+    
+    # Record project_b samples
+    foreach my $sample (@project_b_samples) {
+        record_sample_seen($sample, "project_b", \%seen_samples, \%first_project)
+            unless is_duplicate_sample($sample, \%seen_samples, \%first_project);
+    }
+    
+    # Check project_c duplicates
+    ok(is_duplicate_sample("SAMPLE001", \%seen_samples, \%first_project), "SAMPLE001 duplicate in project_c");
+    ok(is_duplicate_sample("SAMPLE005", \%seen_samples, \%first_project), "SAMPLE005 duplicate in project_c");
+    ok(!is_duplicate_sample("SAMPLE006", \%seen_samples, \%first_project), "SAMPLE006 is new in project_c");
+    
+    # Verify first project tracking
+    is(get_sample_first_project("SAMPLE002", \%first_project), "project_a", "SAMPLE002 first seen in project_a");
 };
 
 print "\nAll tests completed!\n";

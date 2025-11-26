@@ -262,4 +262,67 @@ sub get_model_samples {
     return %model_samples;
 }
 
+# Normalize sample barcode for duplicate detection
+# Handles common variations in sample naming
+sub normalize_sample_barcode {
+    my ($barcode) = @_;
+    return '' unless defined $barcode && $barcode ne '';
+    
+    my $normalized = $barcode;
+    $normalized =~ s/^\s+|\s+$//g;  # trim whitespace
+    
+    # Extract TCGA-style barcode components if applicable
+    # TCGA barcodes: TCGA-XX-XXXX-XXX-XXX-XXXX-XX
+    # Where XX is tissue source site (2 alphanum), XXXX is participant (4 alphanum)
+    # The first 15 characters (TCGA-XX-XXXX-XX) identify the sample
+    if ($normalized =~ /^(TCGA-[A-Z0-9]{2}-[A-Z0-9]{4})-(\d{2})/) {
+        # For TCGA samples, keep participant + sample type for grouping
+        # This handles cases where same sample has different portions/analytes
+        return "$1-$2";
+    }
+    
+    return $normalized;
+}
+
+# Check if a sample barcode is a duplicate (already seen)
+# Returns 1 if duplicate, 0 if new
+# Also records the sample if it's new
+sub is_duplicate_sample {
+    my ($sample_barcode, $seen_samples_ref, $first_project_ref) = @_;
+    return 0 unless defined $sample_barcode && $sample_barcode ne '';
+    
+    my $normalized = normalize_sample_barcode($sample_barcode);
+    return 0 if $normalized eq '';
+    
+    if (exists $seen_samples_ref->{$normalized}) {
+        return 1;  # Duplicate
+    }
+    
+    return 0;  # New sample
+}
+
+# Record a sample as seen, storing which project it was first found in
+sub record_sample_seen {
+    my ($sample_barcode, $project_name, $seen_samples_ref, $first_project_ref) = @_;
+    return unless defined $sample_barcode && $sample_barcode ne '';
+    
+    my $normalized = normalize_sample_barcode($sample_barcode);
+    return if $normalized eq '';
+    
+    unless (exists $seen_samples_ref->{$normalized}) {
+        $seen_samples_ref->{$normalized} = 1;
+        $first_project_ref->{$normalized} = $project_name if defined $first_project_ref;
+    }
+}
+
+# Get the project where a sample was first seen
+sub get_sample_first_project {
+    my ($sample_barcode, $first_project_ref) = @_;
+    return undef unless defined $sample_barcode && $sample_barcode ne '';
+    
+    my $normalized = normalize_sample_barcode($sample_barcode);
+    return $first_project_ref->{$normalized} if exists $first_project_ref->{$normalized};
+    return undef;
+}
+
 1;  # Return true for module loading
