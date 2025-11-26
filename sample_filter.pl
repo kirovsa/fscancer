@@ -109,6 +109,27 @@ sub discover_metadata_files {
     return @found_files;
 }
 
+# Discover all subdirectories one level down from a given directory
+# Returns list of [directory_name, directory_path] pairs
+sub discover_subdirectories {
+    my ($directory) = @_;
+    my @subdirs;
+    
+    return @subdirs unless -d $directory;
+    
+    opendir(my $dh, $directory) or return @subdirs;
+    while (my $entry = readdir($dh)) {
+        next if $entry =~ /^\./;  # Skip hidden directories
+        my $path = "$directory/$entry";
+        if (-d $path) {
+            push @subdirs, [$entry, $path];
+        }
+    }
+    closedir($dh);
+    
+    return @subdirs;
+}
+
 # Parse a metadata file and return hash of sample_id => is_model
 sub parse_metadata_file {
     my ($file_path) = @_;
@@ -190,6 +211,31 @@ sub load_sample_metadata {
     }
     
     return %sample_is_model;
+}
+
+# Load sample metadata from all subdirectories one level down
+# Returns hash of project_id => { sample_id => is_model }
+# Directory names are used as project IDs
+sub load_sample_metadata_from_subdirs {
+    my ($directory) = @_;
+    my %project_metadata;
+    
+    return %project_metadata unless -d $directory;
+    
+    my @subdirs = discover_subdirectories($directory);
+    
+    foreach my $subdir_ref (@subdirs) {
+        my ($project_id, $subdir_path) = @$subdir_ref;
+        
+        my %sample_is_model = load_sample_metadata($subdir_path);
+        
+        # Only add projects that have metadata
+        if (scalar(keys %sample_is_model) > 0) {
+            $project_metadata{$project_id} = \%sample_is_model;
+        }
+    }
+    
+    return %project_metadata;
 }
 
 # Get sample ID column index from mutation file headers

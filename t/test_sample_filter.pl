@@ -3,7 +3,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 27;
 use File::Basename;
 use Cwd 'abs_path';
 
@@ -230,6 +230,61 @@ subtest 'Edge case - Model type variations' => sub {
     ok(is_model_sample("invitro"), "invitro detected");
     ok(is_model_sample("CCLE cell line"), "CCLE cell line detected");
     ok(is_model_sample("PDX xenograft"), "PDX xenograft detected");
+};
+
+# Test discover_subdirectories
+subtest 'discover_subdirectories' => sub {
+    plan tests => 3;
+    my $projects_dir = "$fixtures_dir/projects";
+    my @subdirs = discover_subdirectories($projects_dir);
+    
+    ok(scalar(@subdirs) >= 3, "Found at least 3 subdirectories");
+    
+    # Check that we get [name, path] pairs
+    my %found_dirs = map { $_->[0] => $_->[1] } @subdirs;
+    ok(exists $found_dirs{'project_alpha'}, "Found project_alpha subdirectory");
+    ok(exists $found_dirs{'project_beta'}, "Found project_beta subdirectory");
+};
+
+subtest 'discover_subdirectories - nonexistent dir' => sub {
+    plan tests => 1;
+    my @subdirs = discover_subdirectories("/nonexistent/path");
+    is(scalar(@subdirs), 0, "Returns empty list for nonexistent directory");
+};
+
+# Test load_sample_metadata_from_subdirs
+subtest 'load_sample_metadata_from_subdirs' => sub {
+    plan tests => 6;
+    my $projects_dir = "$fixtures_dir/projects";
+    my %project_metadata = load_sample_metadata_from_subdirs($projects_dir);
+    
+    ok(exists $project_metadata{'project_alpha'}, "project_alpha loaded as project ID");
+    ok(exists $project_metadata{'project_beta'}, "project_beta loaded as project ID");
+    
+    # Verify project_alpha samples
+    my $alpha_samples = $project_metadata{'project_alpha'};
+    is($alpha_samples->{'ALPHA001'}, 0, "ALPHA001 (Patient) is not model");
+    is($alpha_samples->{'ALPHA002'}, 1, "ALPHA002 (PDX) is model");
+    
+    # Verify project_beta samples
+    my $beta_samples = $project_metadata{'project_beta'};
+    is($beta_samples->{'BETA001'}, 1, "BETA001 (Cell Line) is model");
+    is($beta_samples->{'BETA002'}, 0, "BETA002 (Patient) is not model");
+};
+
+subtest 'load_sample_metadata_from_subdirs - nonexistent dir' => sub {
+    plan tests => 1;
+    my %project_metadata = load_sample_metadata_from_subdirs("/nonexistent/path");
+    is(scalar(keys %project_metadata), 0, "Returns empty hash for nonexistent directory");
+};
+
+subtest 'load_sample_metadata_from_subdirs - empty projects skipped' => sub {
+    plan tests => 1;
+    my $projects_dir = "$fixtures_dir/projects";
+    my %project_metadata = load_sample_metadata_from_subdirs($projects_dir);
+    
+    # empty_project should not be in results (no metadata files)
+    ok(!exists $project_metadata{'empty_project'}, "Empty project not included in results");
 };
 
 print "\nAll tests completed!\n";
