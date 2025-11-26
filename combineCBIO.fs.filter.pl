@@ -97,7 +97,7 @@ my $total_kept = 0;
 my %project_stats;  # project_name => { accepted => N, rejected => N, samples_accepted => {}, samples_rejected => {} }
 
 foreach my $proj (@mutation_files) {
-    my ($dor,$fm,$projname,$file)=split(/\//,$proj);
+    my ($dor,$projname,$file)=split(/\//,$proj);
     my ($study,$center,$r)=split("\_",$projname);
     my $uid=$study.$center;
     
@@ -183,9 +183,9 @@ foreach my $proj (@mutation_files) {
             }
         }
         
-        my ($fsstart,$fslen);
-        $d[$vtype]="SNP" if (defined $classification && $d[$classification]=~/inframe/i);
-        
+        my $fsstart='',
+	my $fslen='';
+        $d[$vtype]="SNP" if (defined $classification && $d[$classification]=~/inframe/i);        
         if (!defined $classification || $d[$classification] !~/frameshift/i) {
             $fslen=0;
         }
@@ -195,6 +195,7 @@ foreach my $proj (@mutation_files) {
         unless ($fslen) { $fslen=0; }
         
         my $sample_val = defined $sample ? $d[$sample] : "";
+
         print "$projname\t".$d[$gene]."\t".$sample_val."\t".$d[$vtype]."\t".$d[$hgvsp]."\t".$fsstart."\t".$fslen."\n";
         $cnt{$d[$gene]}++;
         $file_kept++;
