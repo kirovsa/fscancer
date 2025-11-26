@@ -46,7 +46,7 @@ sub is_model_sample {
     $value =~ s/^\s+|\s+$//g;  # trim whitespace
     
     foreach my $pattern (@MODEL_TYPE_PATTERNS) {
-        if ($value =~ /$pattern/i) {
+        if ($value =~ /$pattern/) {
             return 1;
         }
     }

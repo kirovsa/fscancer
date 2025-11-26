@@ -14,9 +14,13 @@
 use strict;
 use warnings;
 use Getopt::Long;
+use File::Basename;
+use File::Find;
+use Cwd 'abs_path';
 
-# Include sample_filter functions
-require "./sample_filter.pl";
+# Include sample_filter functions from same directory as this script
+my $script_dir = dirname(abs_path($0));
+require "$script_dir/sample_filter.pl";
 
 # Parse command line arguments
 my $metadata_file = '';
@@ -59,16 +63,30 @@ unless ($include_model) {
 }
 
 # Find mutation files with path-based filtering (original behavior)
-my $cbfs=`find . -name 'data_mutations*' |grep -vi ccle|grep -vi pdx|grep -vi cellline|grep -vi cell_line|grep -vi xenograft|grep -vi test`;
+# Using File::Find for safer file discovery
+my @mutation_files;
+find(sub {
+    return unless -f $_;
+    return unless /^data_mutations/;
+    my $path = $File::Find::name;
+    # Skip model-related paths (backwards compatibility)
+    return if $path =~ /ccle/i;
+    return if $path =~ /pdx/i;
+    return if $path =~ /cellline/i;
+    return if $path =~ /cell_line/i;
+    return if $path =~ /xenograft/i;
+    return if $path =~ /test/i;
+    push @mutation_files, $path;
+}, '.');
+
 open(CNT,">cnt");
-my @cbf=split(/\n/,$cbfs);
 
 my %seen;
 my %cnt;
 my $total_filtered = 0;
 my $total_kept = 0;
 
-foreach my $proj (@cbf) {
+foreach my $proj (@mutation_files) {
     my ($dor,$fm,$projname,$file)=split(/\//,$proj);
     my ($study,$center,$r)=split("\_",$projname);
     my $uid=$study.$center;
