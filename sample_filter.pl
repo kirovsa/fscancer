@@ -273,8 +273,9 @@ sub normalize_sample_barcode {
     
     # Extract TCGA-style barcode components if applicable
     # TCGA barcodes: TCGA-XX-XXXX-XXX-XXX-XXXX-XX
+    # Where XX is tissue source site (2 alphanum), XXXX is participant (4 alphanum)
     # The first 15 characters (TCGA-XX-XXXX-XX) identify the sample
-    if ($normalized =~ /^(TCGA-\w{2}-\w{4})-(\d{2})/) {
+    if ($normalized =~ /^(TCGA-[A-Z0-9]{2}-[A-Z0-9]{4})-(\d{2})/) {
         # For TCGA samples, keep participant + sample type for grouping
         # This handles cases where same sample has different portions/analytes
         return "$1-$2";
