@@ -6,12 +6,12 @@
 
 ## Extracted Attributes
 
-The script retrieves the following attributes for each gene:
+The script retrieves the following attributes for each gene (in this order):
 
-1. **Stable Ensembl Gene ID** (`ensembl_gene_id`) - Unique identifier for genes in Ensembl
-2. **Transcript Stable ID** (`ensembl_transcript_id`) - Unique identifier for transcripts
-3. **Peptide Stable ID** (`ensembl_peptide_id`) - Unique identifier for protein sequences
-4. **Gene Name** (`external_gene_name`) - Common gene symbol (e.g., TP53, BRCA1)
+1. **Transcript Stable ID** (`ensembl_transcript_id`) - Unique identifier for transcripts
+2. **Stable Ensembl Gene ID** (`ensembl_gene_id`) - Unique identifier for genes in Ensembl
+3. **Gene Name** (`external_gene_name`) - Common gene symbol (e.g., TP53, BRCA1)
+4. **Peptide Stable ID** (`ensembl_peptide_id`) - Unique identifier for protein sequences
 5. **CDS Length** (`cds_length`) - Length of the coding sequence in base pairs
 6. **Transcript Type** (`transcript_biotype`) - Classification of the transcript (e.g., protein_coding, lncRNA)
 
@@ -64,15 +64,15 @@ result <- extract_gene_attributes("output.txt")
 The script generates a pipe-separated (`|`) file with **no header**. Each line contains the six attributes in this order:
 
 ```
-ensembl_gene_id|ensembl_transcript_id|ensembl_peptide_id|gene_name|cds_length|transcript_biotype
+ensembl_transcript_id|ensembl_gene_id|gene_name|ensembl_peptide_id|cds_length|transcript_biotype
 ```
 
 ### Example output:
 
 ```
-ENSG00000000003|ENST00000373020|ENSP00000362111|TSPAN6|879|protein_coding
-ENSG00000000005|ENST00000373031|ENSP00000362122|TNMD|1455|protein_coding
-ENSG00000000419|ENST00000371582|ENSP00000360644|DPM1|834|protein_coding
+ENST00000373020|ENSG00000000003|TSPAN6|ENSP00000362111|879|protein_coding
+ENST00000373031|ENSG00000000005|TNMD|ENSP00000362122|1455|protein_coding
+ENST00000371582|ENSG00000000419|DPM1|ENSP00000360644|834|protein_coding
 ```
 
 ### Note on empty fields:
@@ -126,20 +126,20 @@ This creates a sample file `example_gene_attributes.txt` showing the format with
 
 ## Compatibility with frameshift.Rmd
 
-This script generates output in the same format as the `protlen.txt` file referenced in `frameshift.Rmd`. The pipe-separated format matches the expected input:
+This script generates output in the same format as the `protlen.txt` file referenced in `frameshift.Rmd`. The pipe-separated format with column order matches the expected input:
 
 ```r
 enslen<-read.table("gene_attributes.txt",sep="|",head=F)
 colnames(enslen)<-c("ENST","ENSG","Symbol","ENSP","ProtLen","Type")
 ```
 
-**Note:** The column order in the generated file is:
-1. Gene ID (ENSG)
-2. Transcript ID (ENST) 
-3. Peptide ID (ENSP)
-4. Symbol
-5. CDS Length (ProtLen)
-6. Type
+**Column mapping:**
+1. ENST = Transcript ID (`ensembl_transcript_id`)
+2. ENSG = Gene ID (`ensembl_gene_id`)
+3. Symbol = Gene Name (`external_gene_name`)
+4. ENSP = Peptide ID (`ensembl_peptide_id`)
+5. ProtLen = CDS Length (`cds_length`)
+6. Type = Transcript Type (`transcript_biotype`)
 
 ## Important Notes
 

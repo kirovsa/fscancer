@@ -3,10 +3,10 @@
 # 
 # Purpose:
 #   Extracts the following attributes for all human genes from Ensembl BioMart:
-#   - Stable Ensembl gene ID
 #   - Transcript stable ID
-#   - Peptide stable ID
+#   - Stable Ensembl gene ID
 #   - Gene name
+#   - Peptide stable ID
 #   - CDS length
 #   - Transcript type
 #
@@ -31,15 +31,16 @@
 #
 # Output Format:
 #   Pipe-separated (|) file with no header, containing:
-#   ensembl_gene_id|ensembl_transcript_id|ensembl_peptide_id|gene_name|cds_length|transcript_biotype
+#   ensembl_transcript_id|ensembl_gene_id|gene_name|ensembl_peptide_id|cds_length|transcript_biotype
 #
 # Example output:
-#   ENSG00000000003|ENST00000373020|ENSP00000362111|TSPAN6|879|protein_coding
-#   ENSG00000000005|ENST00000373031|ENSP00000362122|TNMD|1455|protein_coding
+#   ENST00000373020|ENSG00000000003|TSPAN6|ENSP00000362111|879|protein_coding
+#   ENST00000373031|ENSG00000000005|TNMD|ENSP00000362122|1455|protein_coding
 #
 # Note:
 #   This script requires internet access to connect to the Ensembl BioMart database.
 #   The query may take several minutes to complete depending on network speed.
+#   The output format matches the expected input for frameshift.Rmd.
 
 # Load required library
 library(biomaRt)
@@ -61,13 +62,14 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
   message("Fetching gene attributes...")
   
   # Define the attributes to retrieve
+  # Order matches the expected format in frameshift.Rmd: ENST, ENSG, Symbol, ENSP, ProtLen, Type
   attributes <- c(
-    "ensembl_gene_id",          # Stable Ensembl gene ID
-    "ensembl_transcript_id",    # Transcript stable ID
-    "ensembl_peptide_id",       # Peptide stable ID
-    "external_gene_name",       # Gene name
-    "cds_length",               # CDS length
-    "transcript_biotype"        # Transcript type
+    "ensembl_transcript_id",    # Transcript stable ID (ENST)
+    "ensembl_gene_id",          # Stable Ensembl gene ID (ENSG)
+    "external_gene_name",       # Gene name (Symbol)
+    "ensembl_peptide_id",       # Peptide stable ID (ENSP)
+    "cds_length",               # CDS length (ProtLen)
+    "transcript_biotype"        # Transcript type (Type)
   )
   
   # Query BioMart
