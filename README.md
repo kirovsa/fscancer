@@ -4,14 +4,26 @@ This code was made available to reproduce the frameshift analysis in the publica
 
 ## Components
 
-### 1. Original Script
+### 1. Gene Attributes Extraction Script
+**File:** `extract_gene_attributes.R`
+
+R script that uses biomaRt to extract gene attributes from Ensembl BioMart database for all human genes. Extracts: stable ensembl gene id, transcript stable id, peptide stable id, gene name, CDS length, and transcript type.
+
+**Usage:**
+```bash
+Rscript extract_gene_attributes.R [output_file]
+```
+
+For detailed documentation, see [BIOMART_README.md](BIOMART_README.md).
+
+### 2. Original Script
 **File:** `combineCBIO.fs.pl`
 
 Script should be run from the github clone of cBioPortal one level above public directory. No params needed, just redirect output to `cbio.fs.nocelllinepdx.txt`.
 
 This is read by the Rmd script that generates the report used to analyze the data that was published.
 
-### 2. Enhanced Script with Per-Sample Filtering
+### 3. Enhanced Script with Per-Sample Filtering
 **File:** `combineCBIO.fs.filter.pl`
 
 Enhanced version that supports metadata-based per-sample filtering. Useful when mutation files contain a mix of patient and model samples.
@@ -42,7 +54,7 @@ perl combineCBIO.fs.filter.pl --include-duplicates > output.txt
 - `cnt`: gene counts (same as original script)
 - `filter_stats.tsv`: per-project filtering statistics (customizable via `--stats`)
 
-### 3. Sample Filter Module
+### 4. Sample Filter Module
 **File:** `sample_filter.pl`
 
 Perl module providing functions for metadata-based sample filtering and duplicate sample detection. Used by `combineCBIO.fs.filter.pl`.

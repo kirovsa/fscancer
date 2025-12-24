@@ -10,6 +10,8 @@
 cnt
 cbio.fs.nocelllinepdx.txt
 filter_stats.tsv
+gene_attributes.txt
+test_output.txt
 
 # Backup files
 *.bak
