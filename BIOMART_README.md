@@ -145,9 +145,11 @@ colnames(enslen)<-c("ENST","ENSG","Symbol","ENSP","ProtLen","Type")
 
 1. **Internet Connection Required**: The script needs internet access to connect to the Ensembl BioMart database at www.ensembl.org
 
-2. **Execution Time**: Querying all human genes may take several minutes depending on network speed and server load
+2. **Mirror Fallback**: If the main Ensembl server times out or is unavailable, the script automatically tries the US East mirror (useast.ensembl.org) as a fallback
 
-3. **Ensembl Version**: The script connects to the current release of Ensembl. Results may vary slightly between releases as gene annotations are updated
+3. **Execution Time**: Querying all human genes may take several minutes depending on network speed and server load
+
+3. **Ensembl Version**: The script connects to the current release of Ensembl. Results may vary slightly between releases as gene annotations are updated. The script will automatically try the US East mirror if the main server is unavailable.
 
 4. **Multiple Transcripts**: Genes can have multiple transcripts, so the same gene ID may appear multiple times with different transcript IDs
 
@@ -155,9 +157,9 @@ colnames(enslen)<-c("ENST","ENSG","Symbol","ENSP","ProtLen","Type")
 
 ### Connection errors:
 
-If you see connection errors, verify:
+If you see connection errors, the script will automatically try alternative mirrors. If all mirrors fail, verify:
 - Your internet connection is active
-- You can access www.ensembl.org in your browser
+- You can access www.ensembl.org or useast.ensembl.org in your browser
 - No firewall is blocking the connection
 
 ### Package errors:
@@ -173,8 +175,8 @@ BiocManager::install("biomaRt")
 
 ### Empty results:
 
-If no data is retrieved:
-- The Ensembl server may be temporarily unavailable
+If no data is retrieved from any server:
+- The Ensembl servers (both main and mirrors) may be temporarily unavailable
 - Try again later or check the Ensembl status page
 
 ## Additional Information
