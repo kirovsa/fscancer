@@ -82,11 +82,6 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
         }
       }
     })
-    
-    # If we successfully connected, break
-    if (!is.null(ensembl)) {
-      break
-    }
   }
   
   # If all connection attempts failed

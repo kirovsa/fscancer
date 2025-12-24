@@ -149,7 +149,7 @@ colnames(enslen)<-c("ENST","ENSG","Symbol","ENSP","ProtLen","Type")
 
 3. **Execution Time**: Querying all human genes may take several minutes depending on network speed and server load
 
-3. **Ensembl Version**: The script connects to the current release of Ensembl. Results may vary slightly between releases as gene annotations are updated. The script will automatically try the US East mirror if the main server is unavailable.
+3. **Ensembl Version**: The script connects to the current release of Ensembl. Results may vary slightly between releases as gene annotations are updated
 
 4. **Multiple Transcripts**: Genes can have multiple transcripts, so the same gene ID may appear multiple times with different transcript IDs
 
