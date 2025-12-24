@@ -12,6 +12,7 @@ cbio.fs.nocelllinepdx.txt
 filter_stats.tsv
 gene_attributes.txt
 test_output.txt
+example_gene_attributes.txt
 
 # Backup files
 *.bak

@@ -114,6 +114,16 @@ lncRNA                          18345
 ...
 ```
 
+## Example Output
+
+An example script (`example_biomart_output.R`) is provided to demonstrate the expected output format. Run it with:
+
+```bash
+Rscript example_biomart_output.R
+```
+
+This creates a sample file `example_gene_attributes.txt` showing the format without requiring internet access.
+
 ## Compatibility with frameshift.Rmd
 
 This script generates output in the same format as the `protlen.txt` file referenced in `frameshift.Rmd`. The pipe-separated format matches the expected input:
