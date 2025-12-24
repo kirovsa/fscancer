@@ -60,23 +60,26 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
   hosts <- c("https://www.ensembl.org", "https://useast.ensembl.org")
   host_names <- c("main Ensembl server", "US East mirror")
   
+  # Pattern for detecting connection errors
+  connection_error_pattern <- "timeout|timed out|cannot open|failed to connect"
+  
   for (i in seq_along(hosts)) {
     tryCatch({
-      message(paste("Attempting to connect to", host_names[i], paste0("(", hosts[i], ")...")))
+      message(sprintf("Attempting to connect to %s (%s)...", host_names[i], hosts[i]))
       ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl", host = hosts[i])
-      message(paste("Successfully connected to", host_names[i]))
+      message(sprintf("Successfully connected to %s", host_names[i]))
       break  # Success, exit the loop
     }, error = function(e) {
       error_msg <- conditionMessage(e)
       # Check if it's a timeout or connection error
-      if (grepl("timeout|timed out|cannot open|failed to connect", error_msg, ignore.case = TRUE)) {
-        message(paste("Connection to", host_names[i], "failed with timeout or connection error."))
+      if (grepl(connection_error_pattern, error_msg, ignore.case = TRUE)) {
+        message(sprintf("Connection to %s failed with timeout or connection error.", host_names[i]))
         if (i < length(hosts)) {
           message("Trying alternative mirror...")
         }
       } else {
         # For non-timeout errors, still try the next host
-        message(paste("Connection to", host_names[i], "failed:", error_msg))
+        message(sprintf("Connection to %s failed: %s", host_names[i], error_msg))
         if (i < length(hosts)) {
           message("Trying alternative mirror...")
         }
