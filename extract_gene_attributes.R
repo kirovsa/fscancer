@@ -41,6 +41,8 @@
 #   This script requires internet access to connect to the Ensembl BioMart database.
 #   The query may take several minutes to complete depending on network speed.
 #   The output format matches the expected input for frameshift.Rmd.
+#   If the main Ensembl server times out, the script will automatically try the
+#   US East mirror (useast.ensembl.org) as a fallback.
 
 # Load required library
 library(biomaRt)
@@ -51,13 +53,46 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
   message("Connecting to Ensembl BioMart database...")
   
   # Connect to Ensembl database (human genome)
-  tryCatch({
-    ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-  }, error = function(e) {
-    stop("Failed to connect to Ensembl BioMart database.\n",
-         "Error: ", conditionMessage(e), "\n",
-         "Please check your internet connection and try again.")
-  })
+  # Try main server first, then fall back to mirror if timeout occurs
+  ensembl <- NULL
+  
+  # List of hosts to try in order (main, then US East mirror)
+  hosts <- c("https://www.ensembl.org", "https://useast.ensembl.org")
+  host_names <- c("main Ensembl server", "US East mirror")
+  
+  # Pattern for detecting connection errors
+  connection_error_pattern <- "timeout|timed out|cannot open|failed to connect"
+  
+  for (i in seq_along(hosts)) {
+    tryCatch({
+      message(sprintf("Attempting to connect to %s (%s)...", host_names[i], hosts[i]))
+      ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl", host = hosts[i])
+      message(sprintf("Successfully connected to %s", host_names[i]))
+      break  # Success, exit the loop
+    }, error = function(e) {
+      error_msg <- conditionMessage(e)
+      # Check if it's a timeout or connection error
+      if (grepl(connection_error_pattern, error_msg, ignore.case = TRUE)) {
+        message(sprintf("Connection to %s failed with timeout or connection error.", host_names[i]))
+        if (i < length(hosts)) {
+          message("Trying alternative mirror...")
+        }
+      } else {
+        # For non-timeout errors, still try the next host
+        message(sprintf("Connection to %s failed: %s", host_names[i], error_msg))
+        if (i < length(hosts)) {
+          message("Trying alternative mirror...")
+        }
+      }
+    })
+  }
+  
+  # If all connection attempts failed
+  if (is.null(ensembl)) {
+    stop("Failed to connect to any Ensembl BioMart server (tried main and mirror sites).\n",
+         "Please check your internet connection and try again later.\n",
+         "The Ensembl servers may be temporarily unavailable.")
+  }
   
   message("Fetching gene attributes...")
   
