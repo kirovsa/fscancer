@@ -90,6 +90,12 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
   
   message(paste("Retrieved", nrow(gene_data), "records"))
   
+  # Calculate summary statistics once for reuse
+  unique_genes <- length(unique(gene_data$ensembl_gene_id))
+  unique_transcripts <- length(unique(gene_data$ensembl_transcript_id))
+  records_with_peptide <- sum(!is.na(gene_data$ensembl_peptide_id) & gene_data$ensembl_peptide_id != "")
+  records_with_cds <- sum(!is.na(gene_data$cds_length) & gene_data$cds_length != "")
+  
   # Write to file with pipe separator (matching the format used in frameshift.Rmd)
   tryCatch({
     write.table(
@@ -111,10 +117,10 @@ extract_gene_attributes <- function(output_file = "gene_attributes.txt") {
   # Print summary statistics
   message("\nSummary:")
   message(paste("  Total records:", nrow(gene_data)))
-  message(paste("  Unique genes:", length(unique(gene_data$ensembl_gene_id))))
-  message(paste("  Unique transcripts:", length(unique(gene_data$ensembl_transcript_id))))
-  message(paste("  Records with peptide IDs:", sum(!is.na(gene_data$ensembl_peptide_id) & gene_data$ensembl_peptide_id != "")))
-  message(paste("  Records with CDS length:", sum(!is.na(gene_data$cds_length) & gene_data$cds_length != "")))
+  message(paste("  Unique genes:", unique_genes))
+  message(paste("  Unique transcripts:", unique_transcripts))
+  message(paste("  Records with peptide IDs:", records_with_peptide))
+  message(paste("  Records with CDS length:", records_with_cds))
   
   # Show transcript type distribution
   message("\nTranscript type distribution:")
