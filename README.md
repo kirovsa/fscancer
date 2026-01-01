@@ -16,7 +16,41 @@ Rscript extract_gene_attributes.R [output_file]
 
 For detailed documentation, see [BIOMART_README.md](BIOMART_README.md).
 
-### 2. Original Script
+### 2. Transcript Annotation Script
+**File:** `annotate_transcripts.R`
+
+R script that annotates Ensembl transcript IDs or gene IDs with biotype information from the Ensembl BioMart database. Unlike the extraction script which retrieves all genes, this script takes specific IDs as input and adds biotype annotations.
+
+**Usage:**
+```bash
+# Annotate transcript IDs (auto-detect ID type)
+Rscript annotate_transcripts.R input_ids.txt output_annotated.txt
+
+# Annotate gene IDs (explicit type)
+Rscript annotate_transcripts.R gene_ids.txt output_annotated.txt gene
+
+# Annotate with auto-detection
+Rscript annotate_transcripts.R ids.txt output_annotated.txt auto
+```
+
+**Input Format:**
+- Text file with Ensembl IDs (one per line)
+- Supported formats: ENST00000000000 (transcripts) or ENSG00000000000 (genes)
+
+**Output Format:**
+- Tab-separated file with columns:
+  - ensembl_gene_id
+  - ensembl_transcript_id
+  - transcript_biotype
+  - external_gene_name
+
+**Example:**
+```bash
+# Run the example to see expected output format
+Rscript example_annotate_transcripts.R
+```
+
+### 3. Original Script
 **File:** `combineCBIO.fs.pl`
 
 Script should be run from the github clone of cBioPortal one level above public directory. No params needed, just redirect output to `cbio.fs.nocelllinepdx.txt`.
