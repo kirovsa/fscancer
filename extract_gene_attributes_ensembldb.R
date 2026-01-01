@@ -199,8 +199,8 @@ extract_gene_attributes_ensembldb <- function(output_file = "gene_attributes_ens
   # Calculate summary statistics
   unique_genes <- length(unique(gene_data$ensembl_gene_id))
   unique_transcripts <- length(unique(gene_data$ensembl_transcript_id))
-  records_with_peptide <- sum(!is.na(gene_data$ensembl_peptide_id) & gene_data$ensembl_peptide_id != "")
-  records_with_cds <- sum(!is.na(gene_data$cds_length) & gene_data$cds_length != "")
+  records_with_peptide <- sum(!is.na(gene_data$ensembl_peptide_id) & nzchar(as.character(gene_data$ensembl_peptide_id)))
+  records_with_cds <- sum(!is.na(gene_data$cds_length))
   
   # Write to file with pipe separator (matching the format used in frameshift.Rmd)
   tryCatch({
