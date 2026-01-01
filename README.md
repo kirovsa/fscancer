@@ -50,6 +50,8 @@ Rscript annotate_transcripts.R ids.txt output_annotated.txt auto
 Rscript example_annotate_transcripts.R
 ```
 
+For detailed documentation, see [ANNOTATE_README.md](ANNOTATE_README.md).
+
 ### 3. Original Script
 **File:** `combineCBIO.fs.pl`
 
