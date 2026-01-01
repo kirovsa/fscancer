@@ -45,6 +45,10 @@ For detailed documentation, see [ENSEMBLDB_README.md](ENSEMBLDB_README.md).
 
 **Note:** Both scripts produce identical output formats compatible with frameshift.Rmd.
 
+#### Choosing Between biomaRt and ensembldb
+
+See [COMPARISON.md](COMPARISON.md) for a detailed comparison to help you choose the right script for your needs.
+
 ### 2. Transcript Annotation Script
 **File:** `annotate_transcripts.R`
 
