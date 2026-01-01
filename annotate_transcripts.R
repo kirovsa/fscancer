@@ -55,6 +55,10 @@
 # Load required library
 library(biomaRt)
 
+# Configuration constants
+BATCH_SIZE <- 500  # Number of IDs to query per batch
+MAX_BIOTYPE_DISPLAY <- 10  # Maximum number of biotypes to display in summary
+
 # Function to detect ID type based on prefix
 detect_id_type <- function(ids) {
   # Remove NA and empty values
@@ -147,15 +151,14 @@ annotate_transcripts <- function(input_file, output_file, id_type = "auto") {
   }
   
   # Query BioMart in batches to handle large input
-  batch_size <- 500
   all_annotations <- NULL
   
   # Split IDs into batches
-  num_batches <- ceiling(length(ids) / batch_size)
+  num_batches <- ceiling(length(ids) / BATCH_SIZE)
   
   for (i in 1:num_batches) {
-    start_idx <- (i - 1) * batch_size + 1
-    end_idx <- min(i * batch_size, length(ids))
+    start_idx <- (i - 1) * BATCH_SIZE + 1
+    end_idx <- min(i * BATCH_SIZE, length(ids))
     batch_ids <- ids[start_idx:end_idx]
     
     message(sprintf("Processing batch %d/%d (%d IDs)...", i, num_batches, length(batch_ids)))
@@ -232,7 +235,7 @@ annotate_transcripts <- function(input_file, output_file, id_type = "auto") {
   if (sum(!is.na(annotated_data$transcript_biotype)) > 0) {
     message("\nBiotype distribution:")
     biotype_counts <- table(annotated_data$transcript_biotype, useNA = "no")
-    print(head(sort(biotype_counts, decreasing = TRUE), 10))
+    print(head(sort(biotype_counts, decreasing = TRUE), MAX_BIOTYPE_DISPLAY))
   }
   
   return(annotated_data)
