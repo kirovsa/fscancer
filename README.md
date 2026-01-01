@@ -4,7 +4,9 @@ This code was made available to reproduce the frameshift analysis in the publica
 
 ## Components
 
-### 1. Gene Attributes Extraction Script
+### 1. Gene Attributes Extraction Scripts
+
+#### Option A: biomaRt version (internet required)
 **File:** `extract_gene_attributes.R`
 
 R script that uses biomaRt to extract gene attributes from Ensembl BioMart database for all human genes. Extracts: stable ensembl gene id, transcript stable id, peptide stable id, gene name, CDS length, and transcript type.
@@ -15,6 +17,33 @@ Rscript extract_gene_attributes.R [output_file]
 ```
 
 For detailed documentation, see [BIOMART_README.md](BIOMART_README.md).
+
+#### Option B: ensembldb version (offline, faster)
+**File:** `extract_gene_attributes_ensembldb.R`
+
+Alternative R script that uses ensembldb package to extract the same gene attributes from local Ensembl databases. Provides faster, offline access with reproducible results.
+
+**Usage:**
+```bash
+# Using default EnsDb.Hsapiens.v86:
+Rscript extract_gene_attributes_ensembldb.R [output_file]
+
+# Using a specific version:
+Rscript extract_gene_attributes_ensembldb.R [output_file] EnsDb.Hsapiens.v109
+
+# Using AnnotationHub for latest version:
+Rscript extract_gene_attributes_ensembldb.R [output_file] hub
+```
+
+**Advantages:**
+- Works offline (after package installation)
+- Faster queries using local databases
+- More reproducible with fixed Ensembl versions
+- Independent of remote server availability
+
+For detailed documentation, see [ENSEMBLDB_README.md](ENSEMBLDB_README.md).
+
+**Note:** Both scripts produce identical output formats compatible with frameshift.Rmd.
 
 ### 2. Transcript Annotation Script
 **File:** `annotate_transcripts.R`
